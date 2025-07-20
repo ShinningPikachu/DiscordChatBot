@@ -3,8 +3,6 @@ const path = require('node:path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./database/config.json');
 
-console.log(token);
-
 const client = new Client({ 
 	intents: [
 		GatewayIntentBits.Guilds, 
@@ -16,6 +14,22 @@ client.cooldowns = new Collection();
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, '/domain/commands');
 const commandFolders = fs.readdirSync(foldersPath);
+
+const { MongoClient } = require('mongodb');
+
+const url = "mongodb://127.0.0.1:27017";
+const BDclient = new MongoClient(url);
+
+const ConnectDB = async() => {
+	try{
+		await BDclient.connect();
+		console.log("DB is Running...");
+	}catch(e){
+		console.log("error", e);
+	}
+}
+
+ConnectDB()
 
 for (const folder of commandFolders) {
 	const commandsPath = path.join(foldersPath, folder);
