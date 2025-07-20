@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const market = require('../../marketManager');
-const { getUserBag, updateUserBag } = require('../../bagManager');
+const market = require('../../repository/marketManager');
+const { getUserBag, updateUserBag } = require('../../repository/bagManager');
 
 module.exports = {
   data: new SlashCommandBuilder()

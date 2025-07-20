@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { getUserBag } = require('../../bagManager');
+const { getUserBag } = require('../../repository/bagManager');
 
 module.exports = {
   data: new SlashCommandBuilder()

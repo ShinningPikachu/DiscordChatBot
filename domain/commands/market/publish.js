@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const market = require('../../marketManager');
-const { getUserBag, updateUserBag } = require('../../bagManager');
+const market = require('../../repository/marketManager');
+const { getUserBag, updateUserBag } = require('../../repository/bagManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -64,7 +64,7 @@ module.exports = {
 };
 
 async function updateMarketBoard(client) {
-  const { boardChannelId, boardMessageId } = require('../../marketManager').getBoardInfo();
+  const { boardChannelId, boardMessageId } = require('../../repository/marketManager').getBoardInfo();
   if (!boardChannelId || !boardMessageId) return;
 
   const channel = await client.channels.fetch(boardChannelId);

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const market = require('../../marketManager');
+const market = require('../../repository/marketManager');
 
 module.exports = {
   data: new SlashCommandBuilder()

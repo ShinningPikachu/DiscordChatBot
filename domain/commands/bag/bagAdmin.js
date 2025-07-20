@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
-const { getUserBag, updateUserBag } = require('../../bagManager');
+const { getUserBag, updateUserBag } =  require('../../repository/bagManager');
 const OWNER_ID = '396765398894379009'; // Replace with your Discord user ID
 
 module.exports = {

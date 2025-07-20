@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBag, updateUserBag } = require('../../bagManager');
+const { getUserBag, updateUserBag } = require('../../repository/bagManager');
 const fs = require('fs');
 const path = require('path');
 
