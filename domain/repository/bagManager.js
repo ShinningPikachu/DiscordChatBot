@@ -4,8 +4,6 @@ const path = require('path');
 // File to store bag data – you can adjust the filename/path as needed.
 const bagFilePath = path.join(__dirname, 'bags.json');
 
-console.log(bagFilePath);
-
 // Load bags data from the file (if it doesn’t exist, initialize with an empty object)
 function loadBags() {
 	if (!fs.existsSync(bagFilePath)) {
