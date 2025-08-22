@@ -1,13 +1,16 @@
-const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
-const { getUserBag, updateUserBag } =  require('../../repository/bagManager');
+import { SlashCommandBuilder, PermissionsBitField } from 'discord.js';
+import productManager from '../../repository/productManager.js';
+const { addProductToUser, removeProductFromUser } = productManager;
+import userManager  from '../../repository/userManager.js';
+const { getOrCreateUser, updateUserCoins } = userManager;
+
 const OWNER_ID = '396765398894379009'; // Replace with your Discord user ID
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('bagadmin')
-    .setDescription('Manage user bags (Owner only)')
-    .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
-    .addSubcommand(subcommand =>
+export const data = new SlashCommandBuilder()
+  .setName('bagadmin')
+  .setDescription('Manage user bags (Owner only)')
+  .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
+  .addSubcommand(subcommand =>
       subcommand
         .setName('additem')
         .setDescription('Add an item to a user bag')
@@ -25,20 +28,32 @@ module.exports = {
                     { name: 'Low', value: 'Low' }
                 )
         ))
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('removeitem')
-        .setDescription('Remove an item from a user bag')
-        .addUserOption(option => option.setName('target').setDescription('User to remove item from').setRequired(true))
-        .addStringOption(option => option.setName('name').setDescription('Item name').setRequired(true))
-        .addIntegerOption(option => option.setName('quantity').setDescription('Quantity to remove').setRequired(true)))
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('setcoins')
-        .setDescription('Set coins for a user bag')
-        .addUserOption(option => option.setName('target').setDescription('User to set coins for').setRequired(true))
-        .addIntegerOption(option => option.setName('coins').setDescription('New coin amount').setRequired(true))),
-  async execute(interaction) {
+  .addSubcommand(subcommand =>
+    subcommand
+      .setName('removeitem')
+      .setDescription('Remove an item from a user bag')
+      .addUserOption(option => option.setName('target').setDescription('User to remove item from').setRequired(true))
+      .addStringOption(option => option.setName('name').setDescription('Item name').setRequired(true))
+      .addIntegerOption(option => option.setName('quantity').setDescription('Quantity to remove').setRequired(true))
+      .addStringOption(option =>
+          option
+              .setName('quality')
+              .setDescription('Item quality')
+              .setRequired(true)
+              .addChoices(
+                  { name: 'High', value: 'High' },
+                  { name: 'Medium', value: 'Medium' },
+                  { name: 'Low', value: 'Low' }
+              )
+      ))
+  .addSubcommand(subcommand =>
+    subcommand
+      .setName('setcoins')
+      .setDescription('Set coins for a user bag')
+      .addUserOption(option => option.setName('target').setDescription('User to set coins for').setRequired(true))
+      .addIntegerOption(option => option.setName('coins').setDescription('New coin amount').setRequired(true)));
+
+export async function execute(interaction) {
     // Check that only the owner can execute these subcommands
     if (interaction.user.id !== OWNER_ID) {
       return interaction.reply({ content: 'This command is for the owner only.', ephemeral: true });
@@ -52,47 +67,68 @@ module.exports = {
       const quantity = interaction.options.getInteger('quantity');
       const quality = interaction.options.getString('quality');
 
-      const bag = getUserBag(target.id);
-      const existingItem = bag.items.find(item => item.name.toLowerCase() === name.toLowerCase());
-      if (existingItem) {
-        existingItem.quantity += quantity;
-        existingItem.quality = quality; // Update quality if needed
-      } else {
-        bag.items.push({ name, quantity, quality });
+      try {
+        // Use your new Mongo method
+        console.log(`Adding ${quantity} of ${name} (quality: ${quality}) to ${target.tag}'s bag`);
+        const updatedProduct = await addProductToUser(target.id, { name, quantity, quality });
+
+        return interaction.reply({
+          content: `✅ Added **${quantity}× ${name}** (quality: **${quality}**) to ${target.tag}’s bag.`,
+          ephemeral: true,
+        });
+      } catch (err) {
+        console.error('Error in /bag additem:', err);
+        return interaction.reply({
+          content: `❌ Could not add item: ${err.message}`,
+          ephemeral: true,
+        });
       }
-      updateUserBag(target.id, bag);
-      return interaction.reply({ content: `Added ${quantity} ${name}(s) (quality: ${quality}) to ${target.tag}'s bag.`, ephemeral: true });
     }
 
     if (subcommand === 'removeitem') {
-      const target = interaction.options.getUser('target');
-      const name = interaction.options.getString('name');
-      const quantity = interaction.options.getInteger('quantity');
+      const target  = interaction.options.getUser('target');
+      const name    = interaction.options.getString('name');
+      const quantity= interaction.options.getInteger('quantity');
+      const quality = interaction.options.getString('quality');
 
-      const bag = getUserBag(target.id);
-      const itemIndex = bag.items.findIndex(item => item.name.toLowerCase() === name.toLowerCase());
-      if (itemIndex === -1) {
-        return interaction.reply({ content: `Item "${name}" not found in ${target.tag}'s bag.`, ephemeral: true });
+      try {
+        const result = await removeProductFromUser(target.id, { name, quantity, quality });
+        // If it was fully deleted, result.quantity will be <= quantity passed in
+        const verb = result.quantity <= 0 ? 'removed completely' : 'updated';
+        return interaction.reply({
+          content: `✅ ${verb.charAt(0).toUpperCase()+verb.slice(1)} **${name}** (–${quantity}, quality: **${quality}**) in ${target.tag}’s bag.`,
+          ephemeral: true,
+        });
+      } catch (err) {
+        console.error('Error in /bag removeitem:', err);
+        return interaction.reply({
+          content: `❌ Could not remove item: ${err.message}`,
+          ephemeral: true,
+        });
       }
-      if (bag.items[itemIndex].quantity < quantity) {
-        return interaction.reply({ content: `Not enough quantity to remove. Current quantity: ${bag.items[itemIndex].quantity}`, ephemeral: true });
-      }
-      bag.items[itemIndex].quantity -= quantity;
-      if (bag.items[itemIndex].quantity === 0) {
-        bag.items.splice(itemIndex, 1);
-      }
-      updateUserBag(target.id, bag);
-      return interaction.reply({ content: `Removed ${quantity} ${name}(s) from ${target.tag}'s bag.`, ephemeral: true });
     }
 
     if (subcommand === 'setcoins') {
       const target = interaction.options.getUser('target');
-      const coins = interaction.options.getInteger('coins');
+      const coins  = interaction.options.getInteger('coins');
 
-      const bag = getUserBag(target.id);
-      bag.coins = coins;
-      updateUserBag(target.id, bag);
-      return interaction.reply({ content: `Set ${target.tag}'s coins to ${coins}.`, ephemeral: true });
+      try {
+        // Ensure the user exists (creates with default if not)
+        await getOrCreateUser(target.id);
+
+        // Update coins in Mongo
+        const updatedUser = await updateUserCoins(target.id, coins);
+
+        return interaction.reply({
+          content: `✅ Set **${target.tag}**'s coins to **${updatedUser.coins}**.`,
+          ephemeral: true,
+        });
+      } catch (err) {
+        console.error('Error in /bag setcoins:', err);
+        return interaction.reply({
+          content: `❌ Could not set coins: ${err.message}`,
+          ephemeral: true,
+        });
+      }
     }
-  },
-};
+  }

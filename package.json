@@ -10,7 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.19.3",
-    "mongodb": "^6.17.0"
+    "mongodb": "^6.17.0",
+    "mongoose": "^8.16.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.26.0",

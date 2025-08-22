@@ -3,6 +3,10 @@ const path = require('node:path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./database/config.json');
 
+const connectDB = require('./database/db'); // <-- Add this at the top
+
+connectDB();
+
 const client = new Client({ 
 	intents: [
 		GatewayIntentBits.Guilds, 
@@ -13,39 +17,29 @@ const client = new Client({
 client.cooldowns = new Collection();
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, '/domain/commands');
-const commandFolders = fs.readdirSync(foldersPath);
+let commandFolders = fs.readdirSync(foldersPath);
 
-const { MongoClient } = require('mongodb');
-
-const url = "mongodb://127.0.0.1:27017";
-const BDclient = new MongoClient(url);
-
-const ConnectDB = async() => {
-	try{
-		await BDclient.connect();
-		console.log("DB is Running...");
-	}catch(e){
-		console.log("error", e);
-	}
-}
-
-ConnectDB()
+commandFolders = ['bag'];
+console.log(commandFolders);
 
 for (const folder of commandFolders) {
 	const commandsPath = path.join(foldersPath, folder);
+	console.log(`Loading commands from folder: ${commandsPath}`);
 	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+	console.log(`Found command files: ${commandFiles}`);
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
+    	console.log(`  • Found command file: ${filePath}`);
 		const command = require(filePath);
-		if ('data' in command && 'execute' in command) {
+		if (command?.data && command?.execute) {
 			client.commands.set(command.data.name, command);
 		} else {
-			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+			console.warn(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
 		}
 	}
 }
 
-const eventsPath = path.join(__dirname, 'events');
+const eventsPath = path.join(__dirname, 'domain/events');
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
 for (const file of eventFiles) {

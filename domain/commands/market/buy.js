@@ -1,15 +1,16 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 const market = require('../../repository/marketManager');
 const { getUserBag, updateUserBag } = require('../../repository/bagManager');
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('market-buy')
-    .setDescription('Buy an item from the market')
-    .addIntegerOption(opt =>
-      opt.setName('id').setDescription('Listing ID').setRequired(true)),
 
-  async execute(interaction) {
+export const data = new SlashCommandBuilder()
+  .setName('market-buy')
+  .setDescription('Buy an item from the market')
+  .addIntegerOption(opt =>
+    opt.setName('id').setDescription('Listing ID').setRequired(true));
+
+
+export async function execute(interaction) {
     const id = interaction.options.getInteger('id');
     const listings = market.getListings();
     const item = listings.find(l => l.id === id);
@@ -45,7 +46,7 @@ module.exports = {
     await interaction.reply(`✅ You bought #${id} **${item.name}** for ${item.price} coins!`);
     await updateMarketBoard(interaction.client);
   }
-};
+
 
 async function updateMarketBoard(client) {
   const { boardChannelId, boardMessageId } = market.getBoardInfo();

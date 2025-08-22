@@ -2,11 +2,11 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const market = require('../../repository/marketManager');
 const { getUserBag, updateUserBag } = require('../../repository/bagManager');
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('market-publish')
-    .setDescription('List an item for sale')
-    .addStringOption(opt =>
+
+export const data = new SlashCommandBuilder()
+  .setName('market-publish')
+  .setDescription('List an item for sale')
+  .addStringOption(opt =>
       opt.setName('name')
          .setDescription('Item name')
          .setRequired(true)
@@ -16,9 +16,9 @@ module.exports = {
       opt.setName('price')
          .setDescription('Price in coins')
          .setRequired(true)
-    ),
+    );
 
-  async execute(interaction) {
+export async function execute(interaction) {
     // Autocomplete suggestions for item names
     if (interaction.isAutocomplete()) {
       const focused = interaction.options.getFocused();
@@ -60,7 +60,6 @@ module.exports = {
 
     await interaction.reply(`✅ Your item (#${id}) is now on the market!`);
     await updateMarketBoard(interaction.client);
-  }
 };
 
 async function updateMarketBoard(client) {
