@@ -48,16 +48,10 @@ export async function execute(interaction) {
       });
     }
 
-    await productManager.removeProductFromUser(interaction.user.id, {
-      name: item.name,
-      quantity: 1,
-      quality: item.quality,
-    });
+    // Add listing using the product's ID
+    const listing = await market.addListing(interaction.user.id, item._id, price);
 
-    // Add listing
-    const id = market.addListing(interaction.user.id, name, price);
-
-    await interaction.reply(`✅ Your item (#${id}) is now on the market!`);
+    await interaction.reply(`✅ Your item (#${listing.id}) is now on the market!`);
     await updateMarketBoard(interaction.client);
 };
 
@@ -68,12 +62,14 @@ async function updateMarketBoard(client) {
   const channel = await client.channels.fetch(boardChannelId);
   const msg = await channel.messages.fetch(boardMessageId);
 
-  const listings = market.getListings();
+  const listings = await market.getListings();
   const embed = new EmbedBuilder()
     .setTitle('🛒 Market Board')
     .setDescription(
       listings.length
-        ? listings.map(l => `#${l.id} • **${l.name}** – ${l.price} coins`).join('\n')
+        ? listings
+            .map(l => `#${l.id} • **${l.product.name}** – ${l.price} coins`)
+            .join('\n')
         : '_No items on sale_'
     )
     .setTimestamp();
