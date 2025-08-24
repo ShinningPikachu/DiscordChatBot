@@ -1,6 +1,8 @@
-const MarketListing = require('./models/MarketListing');
-const Product = require('./models/Product');
-const User = require('./models/User');
+const MarketListing = require('../../database/models/market');
+const Product = require('../../database/models/products');
+const User = require('../../database/models/user');
+
+let boardInfo = { boardChannelId: null, boardMessageId: null };
 
 async function addListing(userId, productId, price) {
   const user = await User.findOne({ userid: userId });
@@ -24,8 +26,19 @@ async function getListings() {
   return await MarketListing.find().populate('product').populate('seller');
 }
 
+function setBoard(channelId, messageId) {
+  boardInfo.boardChannelId = channelId;
+  boardInfo.boardMessageId = messageId;
+}
+
+function getBoardInfo() {
+  return { ...boardInfo };
+}
+
 module.exports = {
   addListing,
   removeListing,
   getListings,
+  setBoard,
+  getBoardInfo,
 };
