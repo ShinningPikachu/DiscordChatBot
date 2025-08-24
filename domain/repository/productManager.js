@@ -32,7 +32,8 @@ async function removeProductFromUser(userId, { name, quantity, quality }) {
   if (!product) throw new Error('Product not found');
 
   if (product.quantity <= quantity) {
-    await findByIdAndDelete(product._id);
+    await Product.findByIdAndDelete(product._id);
+    product.quantity = 0;
   } else {
     product.quantity -= quantity;
     await product.save();
