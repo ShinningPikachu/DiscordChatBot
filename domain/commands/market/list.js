@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const market = require('../../repository/marketManager');
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import market from '../../repository/marketManager.js';
 
 export const data = new SlashCommandBuilder()
   .setName('market-list')
