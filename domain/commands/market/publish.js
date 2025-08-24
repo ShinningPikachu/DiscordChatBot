@@ -23,33 +23,33 @@ export async function execute(interaction) {
     if (interaction.isAutocomplete()) {
       const focused = interaction.options.getFocused();
       const products = await productManager.getUserProducts(interaction.user.id);
-      const choices = products.map(i => i.name);
+      const choices = products.map(p => ({
+        name: `${p.name} (${p.quality})`,
+        value: p._id.toString()
+      }));
       const filtered = choices
-        .filter(name => name.toLowerCase().startsWith(focused.toLowerCase()))
-        .slice(0, 25)
-        .map(name => ({ name, value: name }));
+        .filter(c => c.name.toLowerCase().startsWith(focused.toLowerCase()))
+        .slice(0, 25);
       await interaction.respond(filtered);
       return;
     }
 
     // Main publish logic
-    const name = interaction.options.getString('name');
+    const productId = interaction.options.getString('name');
     const price = interaction.options.getNumber('price');
 
     // Check user has the item
     const products = await productManager.getUserProducts(interaction.user.id);
-    const item = products.find(
-      i => i.name.toLowerCase() === name.toLowerCase()
-    );
+    const item = products.find(p => p._id.toString() === productId);
     if (!item || item.quantity < 1) {
       return interaction.reply({
-        content: `❌ You don't have any **${name}** to sell.`,
-        ephemeral: true
+        content: '❌ You do not own that item.',
+        ephemeral: true,
       });
     }
 
     // Add listing using the product's ID
-    const listing = await market.addListing(interaction.user.id, item._id, price);
+    const listing = await market.addListing(interaction.user.id, productId, price);
 
     await interaction.reply(`✅ Your item (#${listing.id}) is now on the market!`);
     await updateMarketBoard(interaction.client);
@@ -68,7 +68,10 @@ async function updateMarketBoard(client) {
     .setDescription(
       listings.length
         ? listings
-            .map(l => `#${l.id} • **${l.product.name}** – ${l.price} coins`)
+            .map(
+              l =>
+                `#${l.id} • **${l.product.name} (${l.product.quality})** – ${l.price} coins`
+            )
             .join('\n')
         : '_No items on sale_'
     )
