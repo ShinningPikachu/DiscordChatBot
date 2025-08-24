@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBag, updateUserBag } = require('../../repository/bagManager');
+const userManager = require('../../repository/userManager.js').default;
 const fs = require('fs');
 const path = require('path');
 
@@ -111,14 +111,13 @@ module.exports = {
       const filter2 = i => i.customId === `revealSender:${senderId}` && i.user.id === targetUser.id;
       const collector2 = sentMessage.createMessageComponentCollector({ filter: filter2, time: 10 * 60 * 1000 });
       collector2.on('collect', async i => {
-        const bag = getUserBag(i.user.id);
-        if (bag.coins < 5) {
-          return i.reply({ content: `🚫 You need 5 coins to reveal the sender, but you only have ${bag.coins} coins.`, ephemeral: true });
+        const user = await userManager.getOrCreateUser(i.user.id);
+        if (user.coins < 5) {
+          return i.reply({ content: `🚫 You need 5 coins to reveal the sender, but you only have ${user.coins} coins.`, ephemeral: true });
         }
-        bag.coins -= 5;
-        updateUserBag(i.user.id, bag);
+        const updated = await userManager.updateUserCoins(i.user.id, user.coins - 5);
         const sender = await interaction.client.users.fetch(senderId);
-        await i.reply({ content: `This message was sent by **${sender.tag}**. You have been charged 5 coins. Remaining balance: ${bag.coins}`, ephemeral: true });
+        await i.reply({ content: `This message was sent by **${sender.tag}**. You have been charged 5 coins. Remaining balance: ${updated.coins}`, ephemeral: true });
         const disabledButton = new ButtonBuilder().setCustomId(`revealSender:${senderId}`).setLabel('Reveal Sender (5 coins)').setStyle(ButtonStyle.Primary).setDisabled(true);
         await sentMessage.edit({ components: [new ActionRowBuilder().addComponents(disabledButton)] });
         collector2.stop();

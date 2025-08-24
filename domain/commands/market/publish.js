@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const market = require('../../repository/marketManager');
-const { getUserBag, updateUserBag } = require('../../repository/bagManager');
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import market from '../../repository/marketManager.js';
+import productManager from '../../repository/productManager.js';
 
 
 export const data = new SlashCommandBuilder()
@@ -22,8 +22,8 @@ export async function execute(interaction) {
     // Autocomplete suggestions for item names
     if (interaction.isAutocomplete()) {
       const focused = interaction.options.getFocused();
-      const bag = getUserBag(interaction.user.id);
-      const choices = bag.items.map(i => i.name);
+      const products = await productManager.getUserProducts(interaction.user.id);
+      const choices = products.map(i => i.name);
       const filtered = choices
         .filter(name => name.toLowerCase().startsWith(focused.toLowerCase()))
         .slice(0, 25)
@@ -37,23 +37,22 @@ export async function execute(interaction) {
     const price = interaction.options.getNumber('price');
 
     // Check user has the item
-    const bag = getUserBag(interaction.user.id);
-    const itemIndex = bag.items.findIndex(
+    const products = await productManager.getUserProducts(interaction.user.id);
+    const item = products.find(
       i => i.name.toLowerCase() === name.toLowerCase()
     );
-    if (itemIndex === -1 || bag.items[itemIndex].quantity < 1) {
+    if (!item || item.quantity < 1) {
       return interaction.reply({
         content: `❌ You don't have any **${name}** to sell.`,
         ephemeral: true
       });
     }
 
-    // Decrement quantity in bag and save
-    bag.items[itemIndex].quantity -= 1;
-    if (bag.items[itemIndex].quantity === 0) {
-      bag.items.splice(itemIndex, 1);
-    }
-    updateUserBag(interaction.user.id, bag);
+    await productManager.removeProductFromUser(interaction.user.id, {
+      name: item.name,
+      quantity: 1,
+      quality: item.quality,
+    });
 
     // Add listing
     const id = market.addListing(interaction.user.id, name, price);
@@ -63,13 +62,13 @@ export async function execute(interaction) {
 };
 
 async function updateMarketBoard(client) {
-  const { boardChannelId, boardMessageId } = require('../../repository/marketManager').getBoardInfo();
+  const { boardChannelId, boardMessageId } = market.getBoardInfo();
   if (!boardChannelId || !boardMessageId) return;
 
   const channel = await client.channels.fetch(boardChannelId);
   const msg = await channel.messages.fetch(boardMessageId);
 
-  const listings = require('../../marketManager').getListings();
+  const listings = market.getListings();
   const embed = new EmbedBuilder()
     .setTitle('🛒 Market Board')
     .setDescription(
