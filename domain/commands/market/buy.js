@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-const market = require('../../repository/marketManager');
-const { getUserBag, updateUserBag } = require('../../repository/bagManager');
+import market from '../../repository/marketManager.js';
+import userManager from '../../repository/userManager.js';
+import productManager from '../../repository/productManager.js';
 
 
 export const data = new SlashCommandBuilder()
@@ -22,24 +23,20 @@ export async function execute(interaction) {
       return interaction.reply({ content: `❌ You can’t buy your own item.`, ephemeral: true });
     }
 
-    const buyerBag = getUserBag(interaction.user.id);
-    if (buyerBag.coins < item.price) {
+    const buyer = await userManager.getOrCreateUser(interaction.user.id);
+    if (buyer.coins < item.price) {
       return interaction.reply({ content: `❌ You need ${item.price} coins to buy this.`, ephemeral: true });
     }
 
-    // Transfer coins and add item to buyer's bag
-    buyerBag.coins -= item.price;
-    const existing = buyerBag.items.find(i => i.name.toLowerCase() === item.name.toLowerCase());
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      buyerBag.items.push({ name: item.name, quantity: 1, quality: 'Unknown' });
-    }
-    updateUserBag(interaction.user.id, buyerBag);
+    await userManager.updateUserCoins(interaction.user.id, buyer.coins - item.price);
+    await productManager.addProductToUser(interaction.user.id, {
+      name: item.name,
+      quantity: 1,
+      quality: 'Unknown',
+    });
 
-    const sellerBag = getUserBag(item.seller);
-    sellerBag.coins += item.price;
-    updateUserBag(item.seller, sellerBag);
+    const seller = await userManager.getOrCreateUser(item.seller);
+    await userManager.updateUserCoins(item.seller, seller.coins + item.price);
 
     // Remove listing
     market.removeListing(id);
