@@ -19,7 +19,7 @@ client.commands = new Collection();
 const foldersPath = path.join(__dirname, '/domain/commands');
 let commandFolders = fs.readdirSync(foldersPath);
 
-commandFolders = ['bag'];
+commandFolders = ['bag', 'market'];
 console.log(commandFolders);
 
 for (const folder of commandFolders) {
