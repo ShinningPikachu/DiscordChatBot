@@ -23,7 +23,8 @@ export async function execute(interaction) {
     if (interaction.isAutocomplete()) {
       const focused = interaction.options.getFocused();
       const products = await productManager.getUserProducts(interaction.user.id);
-      const choices = products.map(i => i.name);
+      // Build a unique list of product names owned by the user
+      const choices = [...new Set(products.map(p => p.name))];
       const filtered = choices
         .filter(name => name.toLowerCase().startsWith(focused.toLowerCase()))
         .slice(0, 25)
