@@ -18,20 +18,19 @@ export const data = new SlashCommandBuilder()
          .setRequired(true)
     );
 
+export async function autocomplete(interaction) {
+  const focused = interaction.options.getFocused();
+  const products = await productManager.getUserProducts(interaction.user.id);
+  // Build a unique list of product names owned by the user
+  const choices = [...new Set(products.map(p => p.name))];
+  const filtered = choices
+    .filter(name => name.toLowerCase().startsWith(String(focused).toLowerCase()))
+    .slice(0, 25)
+    .map(name => ({ name, value: name }));
+  await interaction.respond(filtered);
+}
+
 export async function execute(interaction) {
-    // Autocomplete suggestions for item names
-    if (interaction.isAutocomplete()) {
-      const focused = interaction.options.getFocused();
-      const products = await productManager.getUserProducts(interaction.user.id);
-      // Build a unique list of product names owned by the user
-      const choices = [...new Set(products.map(p => p.name))];
-      const filtered = choices
-        .filter(name => name.toLowerCase().startsWith(focused.toLowerCase()))
-        .slice(0, 25)
-        .map(name => ({ name, value: name }));
-      await interaction.respond(filtered);
-      return;
-    }
 
     // Main publish logic
     const name = interaction.options.getString('name');

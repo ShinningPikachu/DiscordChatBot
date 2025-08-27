@@ -1,29 +1,20 @@
-const MarketListing = require('../../database/models/market');
-const Product = require('../../database/models/products');
-const User = require('../../database/models/user');
-
+// Simple in-memory market listing manager to match command usage
 let boardInfo = { boardChannelId: null, boardMessageId: null };
+let listings = [];
+let nextId = 1;
 
-async function addListing(userId, productId, price) {
-  const user = await User.findOne({ userid: userId });
-  if (!user) throw new Error('User not found');
-
-  const product = await Product.findById(productId);
-  if (!product) throw new Error('Product not found');
-
-  return await MarketListing.create({
-    product: product._id,
-    seller: user._id,
-    price,
-  });
+function addListing(userId, name, price) {
+  const listing = { id: nextId++, name, seller: userId, price };
+  listings.push(listing);
+  return listing.id;
 }
 
-async function removeListing(listingId) {
-  return await MarketListing.findByIdAndDelete(listingId);
+function removeListing(listingId) {
+  listings = listings.filter(l => l.id !== listingId);
 }
 
-async function getListings() {
-  return await MarketListing.find().populate('product').populate('seller');
+function getListings() {
+  return listings.slice();
 }
 
 function setBoard(channelId, messageId) {
