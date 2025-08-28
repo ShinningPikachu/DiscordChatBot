@@ -18,12 +18,6 @@ export async function execute(interaction) {
     const products = await getUserProducts(userId);
     const user = await getOrCreateUser(userId);
 
-    // map quality to an emoji
-    const qualityIcons = {
-      Low:   '🟢',
-      Medium:'🟡',
-      High:  '🔴'
-    };
 
     const embed = new EmbedBuilder()
       .setTitle(`${interaction.user.username}’s Bag`)
@@ -42,7 +36,7 @@ export async function execute(interaction) {
       products.forEach(prod => {
         embed.addFields({
           name: prod.name,
-          value: `• Quantity: **${prod.quantity}**\n• Quality: ${qualityIcons[prod.quality] || ''} **${prod.quality}**`,
+          value: `• Quantity: **${prod.quantity}**`,
           inline: true
         });
       });

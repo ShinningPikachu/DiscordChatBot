@@ -1,12 +1,34 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import market from '../../repository/marketManager.js';
-import userManager from '../../repository/userManager.js';
 import productManager from '../../repository/productManager.js';
 
 export const data = new SlashCommandBuilder()
-  .setName('market-buy')
-  .setDescription('Buy an item from the market')
-  .addIntegerOption(opt => opt.setName('id').setDescription('Listing ID').setRequired(true));
+  .setName('market-remove')
+  .setDescription('Remove one of your market listings')
+  .addIntegerOption(opt =>
+    opt
+      .setName('id')
+      .setDescription('Listing ID to remove')
+      .setRequired(true)
+      .setAutocomplete(true)
+  );
+
+export async function autocomplete(interaction) {
+  const focused = String(interaction.options.getFocused() ?? '').toLowerCase();
+  const all = market.getListings();
+  const mine = all.filter(l => l.seller === interaction.user.id);
+
+  const choices = mine
+    .filter(l =>
+      !focused ||
+      String(l.id).startsWith(focused) ||
+      (l.name && l.name.toLowerCase().includes(focused))
+    )
+    .slice(0, 25)
+    .map(l => ({ name: `#${l.id} — ${l.name} — ${l.price} coins`, value: l.id }));
+
+  await interaction.respond(choices);
+}
 
 export async function execute(interaction) {
   const id = interaction.options.getInteger('id');
@@ -16,26 +38,18 @@ export async function execute(interaction) {
   if (!item) {
     return interaction.reply({ content: `No item with ID #${id}.`, ephemeral: true });
   }
-  if (item.seller === interaction.user.id) {
-    return interaction.reply({ content: `You can’t buy your own item.`, ephemeral: true });
+  if (item.seller !== interaction.user.id) {
+    return interaction.reply({ content: `You can only remove your own listings.`, ephemeral: true });
   }
 
-  const buyer = await userManager.getOrCreateUser(interaction.user.id);
-  if (buyer.coins < item.price) {
-    return interaction.reply({ content: `You need ${item.price} coins to buy this.`, ephemeral: true });
-  }
-
-  await userManager.updateUserCoins(interaction.user.id, buyer.coins - item.price);
+  market.removeListing(id);
+  // Return the item back to the user's bag
   await productManager.addProductToUser(interaction.user.id, {
     name: item.name,
     quantity: 1,
   });
 
-  const seller = await userManager.getOrCreateUser(item.seller);
-  await userManager.updateUserCoins(item.seller, seller.coins + item.price);
-
-  market.removeListing(id);
-  await interaction.reply(`✅ You bought #${id} **${item.name}** for ${item.price} coins!`);
+  await interaction.reply({ content: `🗑️ Removed your listing #${id} (${item.name}). The item has been returned to your bag.`, ephemeral: true });
   await updateMarketBoard(interaction);
 }
 
