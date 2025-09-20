@@ -1,15 +1,16 @@
-import { SlashCommandBuilder, PermissionsBitField } from 'discord.js';
-import productManager from '../../repository/productManager.js';
+const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
+const productManager = require('../../repository/productManager.js');
 const { addProductToUser, removeProductFromUser } = productManager;
-import userManager  from '../../repository/userManager.js';
+const userManager = require('../../repository/userManager.js');
 const { getOrCreateUser, updateUserCoins } = userManager;
 
 const OWNER_ID = '396765398894379009'; // Replace with your Discord user ID
 
-export const data = new SlashCommandBuilder()
-  .setName('bagadmin')
-  .setDescription('Manage user bags (Owner only)')
-  .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('bagadmin')
+    .setDescription('Manage user bags (Owner only)')
+    .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
   .addSubcommand(subcommand =>
       subcommand
         .setName('additem')
@@ -29,9 +30,9 @@ export const data = new SlashCommandBuilder()
       .setName('setcoins')
       .setDescription('Set coins for a user bag')
       .addUserOption(option => option.setName('target').setDescription('User to set coins for').setRequired(true))
-      .addIntegerOption(option => option.setName('coins').setDescription('New coin amount').setRequired(true)));
+      .addIntegerOption(option => option.setName('coins').setDescription('New coin amount').setRequired(true))),
 
-export async function execute(interaction) {
+  async execute(interaction) {
     // Check that only the owner can execute these subcommands
     if (interaction.user.id !== OWNER_ID) {
       return interaction.reply({ content: 'This command is for the owner only.', ephemeral: true });
@@ -107,4 +108,5 @@ export async function execute(interaction) {
         });
       }
     }
-  }
+  },
+};

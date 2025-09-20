@@ -1,5 +1,5 @@
-import Product from '../../database/models/products.js';
-import User    from '../../database/models/user.js';
+const Product = require('../../database/models/products.js');
+const User = require('../../database/models/user.js');
 
 async function addProductToUser(userId, { name, quantity }) {
   const user = await User.findOne({ userid: userId });
@@ -10,9 +10,8 @@ async function addProductToUser(userId, { name, quantity }) {
   if (existingProduct) {
     existingProduct.quantity += quantity;
     return await existingProduct.save();
-  } else {
-    return await Product.create({ user: user._id, name, quantity });
   }
+  return await Product.create({ user: user._id, name, quantity });
 }
 
 async function removeProductFromUser(userId, { name, quantity }) {
@@ -36,7 +35,6 @@ async function removeProductFromUser(userId, { name, quantity }) {
 async function getUserProducts(userId) {
   const user = await User.findOne({ userid: userId });
   if (!user) return [];
-
   return await Product.find({ user: user._id });
 }
 
@@ -44,7 +42,7 @@ async function removeAllProduct(productId) {
   await Product.findByIdAndDelete(productId);
 }
 
-export default {
+module.exports = {
   addProductToUser,
   removeProductFromUser,
   getUserProducts,

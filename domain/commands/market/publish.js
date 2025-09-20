@@ -1,8 +1,9 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import market from '../../repository/marketManager.js';
-import productManager from '../../repository/productManager.js';
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const market = require('../../repository/marketManager.js');
+const productManager = require('../../repository/productManager.js');
 
-export const data = new SlashCommandBuilder()
+module.exports = {
+  data: new SlashCommandBuilder()
   .setName('market-publish')
   .setDescription('List an item for sale')
   .addStringOption(opt =>
@@ -15,9 +16,9 @@ export const data = new SlashCommandBuilder()
     opt.setName('price')
       .setDescription('Price in coins')
       .setRequired(true)
-  );
+  ),
 
-export async function autocomplete(interaction) {
+  async autocomplete(interaction) {
   const focused = interaction.options.getFocused();
   const products = await productManager.getUserProducts(interaction.user.id);
   const choices = [...new Set(products.map(p => p.name))];
@@ -26,9 +27,9 @@ export async function autocomplete(interaction) {
     .slice(0, 25)
     .map(name => ({ name, value: name }));
   await interaction.respond(filtered);
-}
+  },
 
-export async function execute(interaction) {
+  async execute(interaction) {
   const name = interaction.options.getString('name');
   const price = interaction.options.getNumber('price');
 
@@ -46,7 +47,8 @@ export async function execute(interaction) {
   const id = market.addListing(interaction.user.id, name, price);
   await interaction.reply(`✅ Your item (#${id}) is now on the market!`);
   await updateMarketBoard(interaction);
-}
+  },
+};
 
 async function updateMarketBoard(interaction) {
   const guild = interaction.guild;

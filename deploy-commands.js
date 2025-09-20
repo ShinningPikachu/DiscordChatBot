@@ -7,9 +7,7 @@ const commands = [];
 // Grab all the command folders from the commands directory you created earlier
 const foldersPath = path.join(__dirname, 'domain/commands');
 
-let commandFolders = fs.readdirSync(foldersPath);
-
-commandFolders = ['bag','market'];
+let commandFolders = ['bag', 'market', 'secrete-message'];
 
 for (const folder of commandFolders) {
 	// Grab all the command files from the commands directory you created earlier

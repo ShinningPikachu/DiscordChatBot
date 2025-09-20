@@ -1,5 +1,6 @@
-const Message = require('./models/Message');
-const User = require('./models/User');
+// Point to the shared database models
+const Message = require('../../database/models/secreteMessage.js');
+const User = require('../../database/models/user.js');
 
 async function sendMessage(senderId, receiverId, content) {
   const sender = await User.findOne({ userid: senderId });

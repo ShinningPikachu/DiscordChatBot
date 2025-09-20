@@ -1,4 +1,4 @@
-import User    from '../../database/models/user.js';
+const User = require('../../database/models/user.js');
 
 async function findAllUsers() {
   return await User.find({});
@@ -21,7 +21,7 @@ async function updateUserCoins(userId, newCoinAmount) {
   return user;
 }
 
-export default {
+module.exports = {
   findAllUsers,
   getOrCreateUser,
   updateUserCoins,

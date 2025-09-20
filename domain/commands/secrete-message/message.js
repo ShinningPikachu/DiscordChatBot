@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const userManager = require('../../repository/userManager.js').default;
+const userManager = require('../../repository/userManager.js');
 const fs = require('fs');
 const path = require('path');
 

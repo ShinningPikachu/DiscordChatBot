@@ -1,19 +1,20 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import market from '../../repository/marketManager.js';
-import productManager from '../../repository/productManager.js';
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const market = require('../../repository/marketManager.js');
+const productManager = require('../../repository/productManager.js');
 
-export const data = new SlashCommandBuilder()
-  .setName('market-remove')
-  .setDescription('Remove one of your market listings')
-  .addIntegerOption(opt =>
-    opt
-      .setName('id')
-      .setDescription('Listing ID to remove')
-      .setRequired(true)
-      .setAutocomplete(true)
-  );
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('market-remove')
+    .setDescription('Remove one of your market listings')
+    .addIntegerOption(opt =>
+      opt
+        .setName('id')
+        .setDescription('Listing ID to remove')
+        .setRequired(true)
+        .setAutocomplete(true)
+    ),
 
-export async function autocomplete(interaction) {
+  async autocomplete(interaction) {
   const focused = String(interaction.options.getFocused() ?? '').toLowerCase();
   const all = market.getListings();
   const mine = all.filter(l => l.seller === interaction.user.id);
@@ -28,9 +29,9 @@ export async function autocomplete(interaction) {
     .map(l => ({ name: `#${l.id} — ${l.name} — ${l.price} coins`, value: l.id }));
 
   await interaction.respond(choices);
-}
+  },
 
-export async function execute(interaction) {
+  async execute(interaction) {
   const id = interaction.options.getInteger('id');
   const listings = market.getListings();
   const item = listings.find(l => l.id === id);
@@ -51,7 +52,8 @@ export async function execute(interaction) {
 
   await interaction.reply({ content: `🗑️ Removed your listing #${id} (${item.name}). The item has been returned to your bag.`, ephemeral: true });
   await updateMarketBoard(interaction);
-}
+  },
+};
 
 async function updateMarketBoard(interaction) {
   const guild = interaction.guild;

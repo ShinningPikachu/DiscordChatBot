@@ -4,7 +4,7 @@ module.exports = {
 	name: Events.InteractionCreate,
 	async execute(interaction) {
 		// Handle autocomplete interactions
-		if (interaction.isAutocomplete && interaction.isAutocomplete()) {
+		if (interaction.isAutocomplete && typeof interaction.isAutocomplete === 'function' ? interaction.isAutocomplete() : false) {
 			const command = interaction.client.commands.get(interaction.commandName);
 			if (!command) return;
 			try {
@@ -31,9 +31,9 @@ module.exports = {
 		} catch (error) {
 			console.error(error);
 			if (interaction.replied || interaction.deferred) {
-				await interaction.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+				await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
 			} else {
-				await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 			}
 		}
 	},

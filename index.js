@@ -3,27 +3,27 @@ const path = require('node:path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./database/config.json');
 
-const connectDB = require('./database/db'); // <-- Add this at the top
+const connectDB = require('./database/db');
 
+// Connect to Mongo once at startup
 connectDB();
 
-const client = new Client({ 
-	intents: [
-		GatewayIntentBits.Guilds, 
-		GatewayIntentBits.GuildInvites, 
-		GatewayIntentBits.GuildMembers
-	]
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildInvites,
+        GatewayIntentBits.GuildMembers,
+    ],
 });
 client.cooldowns = new Collection();
 client.commands = new Collection();
-const foldersPath = path.join(__dirname, '/domain/commands');
-let commandFolders = fs.readdirSync(foldersPath);
-
-commandFolders = ['bag', 'market'];
+// Use a correct relative join (no leading slash)
+const foldersPath = path.join(__dirname, 'domain', 'commands');
+let commandFolders = ['bag', 'market', 'secrete-message'];
 console.log(commandFolders);
 
 for (const folder of commandFolders) {
-	const commandsPath = path.join(foldersPath, folder);
+    const commandsPath = path.join(foldersPath, folder);
 	console.log(`Loading commands from folder: ${commandsPath}`);
 	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 	console.log(`Found command files: ${commandFiles}`);
