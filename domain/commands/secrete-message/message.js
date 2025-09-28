@@ -1,22 +1,51 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const userManager = require('../../repository/userManager.js');
 const bagBoardService = require('../../services/bagBoardService.js');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 
 const usageFile = path.join(__dirname, '../../anonUsage.json');
 const REVEAL_COST = 10;
 
-function loadUsage() {
-  if (!fs.existsSync(usageFile)) {
-    fs.writeFileSync(usageFile, JSON.stringify({}));
+async function loadUsageStore() {
+  try {
+    const raw = await fs.readFile(usageFile, 'utf8');
+    return JSON.parse(raw);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      await fs.writeFile(usageFile, JSON.stringify({}, null, 2), 'utf8');
+      return {};
+    }
+    console.error('Failed to read anonymous usage log', error);
     return {};
   }
-  return JSON.parse(fs.readFileSync(usageFile));
 }
 
-function saveUsage(usage) {
-  fs.writeFileSync(usageFile, JSON.stringify(usage, null, 2));
+async function saveUsageStore(store) {
+  await fs.writeFile(usageFile, JSON.stringify(store, null, 2), 'utf8');
+}
+
+async function getUsageFor(guildId, userId) {
+  if (!guildId) return null;
+  const store = await loadUsageStore();
+  return store[guildId]?.[userId] ?? null;
+}
+
+async function setUsageFor(guildId, userId, dateKey) {
+  if (!guildId) return;
+  const store = await loadUsageStore();
+  if (!store[guildId]) {
+    store[guildId] = {};
+  }
+  store[guildId][userId] = dateKey;
+  await saveUsageStore(store);
+}
+
+function getMadridTimestamp() {
+  const now = new Date();
+  const madridNow = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
+  const dateKey = madridNow.toISOString().split('T')[0];
+  return { madridNow, dateKey };
 }
 
 module.exports = {
@@ -56,16 +85,14 @@ module.exports = {
       }
     } catch {}
 
-    const now = new Date();
-    const madridNow = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
+    const { madridNow, dateKey: todayKey } = getMadridTimestamp();
     if (!isServerOwner && !isAppOwner) {
       const hour = madridNow.getHours();
       if (hour < 21) {
         return interaction.reply({ content: 'You can only send anonymous messages after 21:00 (Europe/Madrid).', ephemeral: true });
       }
-      const usage = loadUsage();
-      const today = madridNow.toISOString().split('T')[0];
-      if (usage[senderId] === today) {
+      const alreadyUsed = await getUsageFor(interaction.guildId, senderId);
+      if (alreadyUsed === todayKey) {
         return interaction.reply({ content: 'You can only send one anonymous message per day.', ephemeral: true });
       }
     }
@@ -101,10 +128,8 @@ module.exports = {
       }
 
       if (!isServerOwner && !isAppOwner) {
-        const usage = loadUsage();
-        const today = madridNow.toISOString().split('T')[0];
-        usage[senderId] = today;
-        saveUsage(usage);
+        const { dateKey } = getMadridTimestamp();
+        await setUsageFor(interaction.guildId, senderId, dateKey);
       }
 
       const dmEmbed = new EmbedBuilder()

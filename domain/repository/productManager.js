@@ -2,8 +2,10 @@ const Product = require('../../database/models/products.js');
 const User = require('../../database/models/user.js');
 
 async function addProductToUser(userId, { name, quantity }) {
-  const user = await User.findOne({ userid: userId });
-  if (!user) throw new Error('User not found');
+  let user = await User.findOne({ userid: userId });
+  if (!user) {
+    user = await User.create({ userid: userId });
+  }
 
   const existingProduct = await Product.findOne({ user: user._id, name });
 

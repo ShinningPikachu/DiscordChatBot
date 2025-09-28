@@ -7,22 +7,35 @@ async function findAllUsers() {
 async function getOrCreateUser(userId) {
   let user = await User.findOne({ userid: userId });
   if (!user) {
-    user = await User.create({ userid: userId, roll: 'admin', coins: 100 });
+    user = await User.create({ userid: userId });
   }
   return user;
 }
 
 async function updateUserCoins(userId, newCoinAmount) {
-  const user = await User.findOneAndUpdate(
+  await getOrCreateUser(userId);
+  return User.findOneAndUpdate(
     { userid: userId },
     { coins: newCoinAmount },
-    { new: true }
+    { new: true },
   );
-  return user;
+}
+
+async function incrementUserCoins(userId, amount) {
+  if (typeof amount !== 'number' || Number.isNaN(amount)) {
+    throw new Error('Amount must be a valid number.');
+  }
+  await getOrCreateUser(userId);
+  return User.findOneAndUpdate(
+    { userid: userId },
+    { $inc: { coins: amount } },
+    { new: true },
+  );
 }
 
 module.exports = {
   findAllUsers,
   getOrCreateUser,
   updateUserCoins,
+  incrementUserCoins,
 };

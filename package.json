@@ -4,7 +4,7 @@
   "description": "event discord bot",
   "main": "index.js",
   "scripts": {
-    "test": "run test"
+    "test": "node -e \"console.log('No automated tests configured yet');\""
   },
   "author": "Jinheng Lin",
   "license": "ISC",
@@ -18,3 +18,4 @@
     "eslint": "^9.26.0"
   }
 }
+
